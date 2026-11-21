@@ -5,8 +5,10 @@ using System.Runtime.InteropServices;
 
 namespace AggrWin;
 
-public sealed class MainForm : Form
+public sealed class MainForm : Form, IMessageFilter
 {
+    private const int WmKeyDown = 0x0100;
+    private const int WmSysKeyDown = 0x0104;
     private const string StartupKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string StartupValueName = "AggrWin";
     private const string HomeUrl = "https://aggr.trade";
@@ -37,6 +39,7 @@ public sealed class MainForm : Form
         var appIcon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Application;
         Icon = appIcon;
         KeyPreview = true;
+        Application.AddMessageFilter(this);
 
         BuildToolbar();
         BuildLayout();
@@ -84,6 +87,8 @@ public sealed class MainForm : Form
     private void BuildToolbar()
     {
         _toolbar.GripStyle = ToolStripGripStyle.Hidden;
+        _toolbar.RenderMode = ToolStripRenderMode.Professional;
+        _toolbar.BorderStyle = Border3DStyle.None;
         _toolbar.Dock = DockStyle.Top;
         _toolbar.Padding = new Padding(7, 5, 7, 5);
         _toolbar.BackColor = Color.FromArgb(30, 34, 42);
@@ -130,10 +135,12 @@ public sealed class MainForm : Form
             // WebView2 can consume Escape before the form receives KeyDown.
             _browser.CoreWebView2Controller.AcceleratorKeyPressed += (_, e) =>
             {
-                if (_isFullscreen && e.VirtualKey == (uint)Keys.Escape)
+                if (_isFullscreen && e.VirtualKey == (uint)Keys.Escape &&
+                    e.KeyEventKind == CoreWebView2KeyEventKind.KeyDown)
                 {
                     e.Handled = true;
-                    BeginInvoke(new Action(ToggleFullscreen));
+                    if (IsHandleCreated && !IsDisposed)
+                        BeginInvoke(new Action(ExitFullscreen));
                 }
             };
 
@@ -246,6 +253,24 @@ public sealed class MainForm : Form
             _toolbar.Visible = true;
             _isFullscreen = false;
         }
+    }
+
+    // Message filters see keyboard messages sent to child HWNDs, including WebView2.
+    public bool PreFilterMessage(ref Message m)
+    {
+        if (_isFullscreen && (m.Msg == WmKeyDown || m.Msg == WmSysKeyDown) &&
+            (Keys)(int)m.WParam == Keys.Escape)
+        {
+            BeginInvoke(new Action(ExitFullscreen));
+            return true;
+        }
+        return false;
+    }
+
+    private void ExitFullscreen()
+    {
+        if (_isFullscreen)
+            ToggleFullscreen();
     }
 
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -361,6 +386,7 @@ public sealed class MainForm : Form
     {
         if (disposing)
         {
+            Application.RemoveMessageFilter(this);
             _trayIcon.Dispose();
             _browser.Dispose();
             _toolbar.Dispose();
@@ -377,6 +403,8 @@ public sealed class MainForm : Form
         public override Color ButtonSelectedGradientEnd => Color.FromArgb(55, 62, 74);
         public override Color ButtonPressedGradientBegin => Color.FromArgb(65, 75, 90);
         public override Color ButtonPressedGradientEnd => Color.FromArgb(65, 75, 90);
-        public override Color ToolStripBorder => Color.FromArgb(30, 34, 42);
+        public override Color ToolStripBorder => Color.Black;
+        public override Color MenuBorder => Color.Black;
+        public override Color ToolStripDropDownBackground => Color.FromArgb(15, 18, 24);
     }
 }
