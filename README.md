@@ -6,14 +6,15 @@ AggrWin is an independent browser shell. It does not fork, proxy, or self-host A
 
 ## Features
 
-- Native Windows desktop window powered by Microsoft Edge WebView2.
+- Native Windows desktop window powered by Microsoft Edge WebView2, with a custom AggrWin app icon.
+- Dark Windows title-bar border and caption styling.
 - Opens directly to `https://aggr.trade`.
 - Persistent browser profile/cache under `%LOCALAPPDATA%\AggrWin\WebView2`.
 - JavaScript, DOM storage, cookies, and normal website storage supported by WebView2.
 - Website popups and `target="_blank"` links stay in the app window.
 - File upload flows are handled by WebView2.
 - Home and reload controls.
-- F5 / Ctrl+R to reload, Alt+Left to go back, F11 for fullscreen.
+- F5 / Ctrl+R to reload, Alt+Left to go back, F11 for fullscreen, and Esc to exit fullscreen.
 - Optional **Start with Windows** toggle, stored in the current user's Run registry key.
 - Closing the window minimizes AggrWin to the notification area; use the tray menu to reopen or exit.
 - Single-instance guard to avoid duplicate windows.
@@ -39,9 +40,11 @@ Closing the window hides it in the notification area instead of terminating the 
 
 ## Build locally
 
-Requirements: Windows, .NET 10 SDK, and internet access for NuGet restore.
+Requirements: Windows, Python 3.12 with Pillow, .NET 10 SDK, and internet access for package restore.
 
 ```powershell
+python -m pip install Pillow
+python tools/generate_icon.py
 dotnet restore AggrWin.csproj -r win-x64
 dotnet publish AggrWin.csproj -c Release -r win-x64 --self-contained true
 ```
