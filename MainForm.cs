@@ -1,6 +1,7 @@
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using Microsoft.Win32;
+using System.Runtime.InteropServices;
 
 namespace AggrWin;
 
@@ -9,6 +10,9 @@ public sealed class MainForm : Form
     private const string StartupKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string StartupValueName = "AggrWin";
     private const string HomeUrl = "https://aggr.trade";
+    private const int DwmwaBorderColor = 34;
+    private const int DwmwaCaptionColor = 35;
+    private const int DwmwaTextColor = 36;
 
     private readonly WebView2 _browser = new();
     private readonly ToolStrip _toolbar = new();
@@ -30,7 +34,8 @@ public sealed class MainForm : Form
         MinimumSize = new Size(900, 560);
         StartPosition = FormStartPosition.CenterScreen;
         WindowState = FormWindowState.Maximized;
-        Icon = SystemIcons.Application;
+        var appIcon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Application;
+        Icon = appIcon;
         KeyPreview = true;
 
         BuildToolbar();
@@ -44,7 +49,7 @@ public sealed class MainForm : Form
 
         _trayIcon = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = appIcon,
             Text = "AggrWin — ETHBTC",
             ContextMenuStrip = trayMenu,
             Visible = true
@@ -121,6 +126,16 @@ public sealed class MainForm : Form
                 userDataFolder: userDataFolder);
 
             await _browser.EnsureCoreWebView2Async(environment);
+
+            // WebView2 can consume Escape before the form receives KeyDown.
+            _browser.CoreWebView2Controller.AcceleratorKeyPressed += (_, e) =>
+            {
+                if (_isFullscreen && e.VirtualKey == (uint)Keys.Escape)
+                {
+                    e.Handled = true;
+                    BeginInvoke(new Action(ToggleFullscreen));
+                }
+            };
 
             var settings = _browser.CoreWebView2.Settings;
             settings.AreDefaultContextMenusEnabled = true;
@@ -232,6 +247,40 @@ public sealed class MainForm : Form
             _isFullscreen = false;
         }
     }
+
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (_isFullscreen && keyData == Keys.Escape)
+        {
+            ToggleFullscreen();
+            return true;
+        }
+
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        ApplyDarkWindowChrome();
+    }
+
+    private void ApplyDarkWindowChrome()
+    {
+        // Windows 11 DWM attributes: force the non-client border/title bar dark.
+        SetDwmColor(DwmwaBorderColor, Color.Black);
+        SetDwmColor(DwmwaCaptionColor, Color.FromArgb(0, 0, 0));
+        SetDwmColor(DwmwaTextColor, Color.White);
+    }
+
+    private void SetDwmColor(int attribute, Color color)
+    {
+        int value = ColorTranslator.ToWin32(color);
+        _ = DwmSetWindowAttribute(Handle, attribute, ref value, sizeof(int));
+    }
+
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int valueSize);
 
     private void HandleKeyboardShortcuts(object? sender, KeyEventArgs e)
     {
