@@ -1,8 +1,6 @@
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using Microsoft.Win32;
-using System.Diagnostics;
-using System.Reflection;
 
 namespace AggrWin;
 
@@ -176,8 +174,8 @@ public sealed class MainForm : Form
     {
         try
         {
-            using var key = Registry.CurrentUser.OpenSubKey(StartupKeyPath, writable: true)
-                ?? Registry.CurrentUser.CreateSubKey(StartupKeyPath, writable: true);
+            using var key = Registry.CurrentUser.CreateSubKey(StartupKeyPath, writable: true)
+                ?? throw new InvalidOperationException("Could not open the current user's startup registry key.");
 
             if (IsStartupEnabled())
                 key.DeleteValue(StartupValueName, throwOnMissingValue: false);
@@ -303,7 +301,7 @@ public sealed class MainForm : Form
 
         if (InvokeRequired)
         {
-            BeginInvoke(() => SetStatus(message));
+            BeginInvoke(new Action(() => SetStatus(message)));
             return;
         }
 
