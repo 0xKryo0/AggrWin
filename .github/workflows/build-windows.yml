@@ -1,0 +1,54 @@
+name: Build AggrWin (Windows x64)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Publish standalone x64 EXE
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore AggrWin.csproj -r win-x64
+
+      - name: Publish single-file executable
+        run: >-
+          dotnet publish AggrWin.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --no-restore
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=None
+          -p:DebugSymbols=false
+          -p:PublishReadyToRun=true
+
+      - name: Verify executable
+        shell: pwsh
+        run: |
+          $exe = "bin/Release/net8.0-windows/win-x64/publish/AggrWin.exe"
+          if (!(Test-Path $exe)) {
+            throw "Expected executable not found: $exe"
+          }
+          Get-Item $exe | Select-Object Name, Length, LastWriteTime
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AggrWin-windows-x64
+          path: bin/Release/net8.0-windows/win-x64/publish/AggrWin.exe
+          if-no-files-found: error
+          retention-days: 30
