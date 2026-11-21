@@ -88,7 +88,6 @@ public sealed class MainForm : Form, IMessageFilter
     {
         _toolbar.GripStyle = ToolStripGripStyle.Hidden;
         _toolbar.RenderMode = ToolStripRenderMode.Professional;
-        _toolbar.BorderStyle = Border3DStyle.None;
         _toolbar.Dock = DockStyle.Top;
         _toolbar.Padding = new Padding(7, 5, 7, 5);
         _toolbar.BackColor = Color.FromArgb(30, 34, 42);
@@ -131,18 +130,6 @@ public sealed class MainForm : Form, IMessageFilter
                 userDataFolder: userDataFolder);
 
             await _browser.EnsureCoreWebView2Async(environment);
-
-            // WebView2 can consume Escape before the form receives KeyDown.
-            _browser.CoreWebView2Controller.AcceleratorKeyPressed += (_, e) =>
-            {
-                if (_isFullscreen && e.VirtualKey == (uint)Keys.Escape &&
-                    e.KeyEventKind == CoreWebView2KeyEventKind.KeyDown)
-                {
-                    e.Handled = true;
-                    if (IsHandleCreated && !IsDisposed)
-                        BeginInvoke(new Action(ExitFullscreen));
-                }
-            };
 
             var settings = _browser.CoreWebView2.Settings;
             settings.AreDefaultContextMenusEnabled = true;
