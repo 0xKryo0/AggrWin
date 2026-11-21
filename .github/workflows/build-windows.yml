@@ -17,7 +17,7 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Restore
         run: dotnet restore AggrWin.csproj -r win-x64
@@ -39,7 +39,7 @@ jobs:
       - name: Verify executable
         shell: pwsh
         run: |
-          $exe = "bin/Release/net8.0-windows/win-x64/publish/AggrWin.exe"
+          $exe = "bin/Release/net10.0-windows/win-x64/publish/AggrWin.exe"
           if (!(Test-Path $exe)) {
             throw "Expected executable not found: $exe"
           }
@@ -49,6 +49,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AggrWin-windows-x64
-          path: bin/Release/net8.0-windows/win-x64/publish/AggrWin.exe
+          path: bin/Release/net10.0-windows/win-x64/publish/AggrWin.exe
           if-no-files-found: error
           retention-days: 30
