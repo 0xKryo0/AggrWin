@@ -39,7 +39,7 @@ Closing the window hides it in the notification area instead of terminating the 
 
 ## Build locally
 
-Requirements: Windows, .NET 8 SDK, and internet access for NuGet restore.
+Requirements: Windows, .NET 10 SDK, and internet access for NuGet restore.
 
 ```powershell
 dotnet restore AggrWin.csproj -r win-x64
@@ -49,7 +49,7 @@ dotnet publish AggrWin.csproj -c Release -r win-x64 --self-contained true
 Output:
 
 ```
-bin/Release/net8.0-windows/win-x64/publish/AggrWin.exe
+bin/Release/net10.0-windows/win-x64/publish/AggrWin.exe
 ```
 
 ## GitHub Actions
