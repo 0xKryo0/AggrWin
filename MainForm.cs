@@ -180,7 +180,7 @@ public sealed class MainForm : Form
             if (IsStartupEnabled())
                 key.DeleteValue(StartupValueName, throwOnMissingValue: false);
             else
-                key.SetValue(StartupValueName, $"\\"{Application.ExecutablePath}\\"");
+                key.SetValue(StartupValueName, $"\"{Application.ExecutablePath}\"");
 
             UpdateStartupButton();
         }
